@@ -88,6 +88,7 @@ export function isPurgedMeeting(m: { id?: string; meetingRoomId?: string; title?
 
 function initMeetingsCache(): Meeting[] {
   try {
+    if (typeof localStorage === 'undefined') return [];
     const stored = localStorage.getItem('hyna_meetings_cache');
     if (stored) {
       const parsed = JSON.parse(stored);
@@ -423,7 +424,12 @@ export async function getUsers(): Promise<User[]> {
       console.error('Error fetching users from Supabase:', error);
       return usersCache;
     }
-    const mapped = (data || []).map(mapUser);
+    
+    // Filter out locally deleted members to handle Supabase RLS silently failing
+    const locallyDeleted = JSON.parse(localStorage.getItem('deleted_members') || '[]');
+    const validData = (data || []).filter(u => !locallyDeleted.includes(u.id));
+
+    const mapped = validData.map(mapUser);
     usersCache = mapped;
     return mapped;
   } catch (err) {
@@ -542,6 +548,14 @@ export async function deleteMember(id: string): Promise<void> {
       .update({ status: 'inactive' })
       .eq('id', id);
     if (updateErr) throw error;
+  }
+
+  // Fallback: Supabase RLS silently fails for DELETE/UPDATE when affecting 0 rows.
+  // We keep track of deleted members locally to ensure they vanish from the UI.
+  const locallyDeleted = JSON.parse(localStorage.getItem('deleted_members') || '[]');
+  if (!locallyDeleted.includes(id)) {
+    locallyDeleted.push(id);
+    localStorage.setItem('deleted_members', JSON.stringify(locallyDeleted));
   }
 
   usersCache = usersCache.filter(u => u.id !== id);

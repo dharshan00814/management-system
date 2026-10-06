@@ -26,8 +26,28 @@ export function generateMeetingCode(): string {
   return result;
 }
 
+// Helper: Generate secure formatted meeting room ID (e.g. room-ab12-cd34-ef56)
+// Uses crypto-secure randomness with a Math.random fallback for non-browser runtimes.
 export function generateMeetingRoomId(): string {
-  return generateMeetingCode();
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+  const randomBlock = (length: number): string => {
+    let block = '';
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const randomValues = new Uint32Array(length);
+      crypto.getRandomValues(randomValues);
+      for (let i = 0; i < length; i++) {
+        block += chars.charAt(randomValues[i] % chars.length);
+      }
+    } else {
+      for (let i = 0; i < length; i++) {
+        block += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+    }
+    return block;
+  };
+
+  return `room-${randomBlock(4)}-${randomBlock(4)}-${randomBlock(4)}`;
 }
 
 // Clean and extract meeting code from raw input (URLs, paths, or code)
