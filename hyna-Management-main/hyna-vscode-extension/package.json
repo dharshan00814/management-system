@@ -1,0 +1,105 @@
+{
+  "name": "hyna-developer-tracker",
+  "displayName": "Hyna Developer Activity Tracker",
+  "description": "Privacy-conscious live development activity and working time tracker for VS Code, Cursor, and Antigravity",
+  "version": "1.0.0",
+  "publisher": "hyna-studio",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "hyna.connect",
+        "title": "Connect With Code",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.disconnect",
+        "title": "Disconnect Integration",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.selectProject",
+        "title": "Select Active Project",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.selectTask",
+        "title": "Select Active Task",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.status",
+        "title": "Show Tracker Status",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.openTerminal",
+        "title": "Open Tracker Terminal",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.start",
+        "title": "Start Live Tracking",
+        "category": "Hyna"
+      },
+      {
+        "command": "hyna.stop",
+        "title": "Stop Live Tracking & Disconnect",
+        "category": "Hyna"
+      }
+    ],
+    "configuration": {
+      "title": "Hyna Activity Tracker",
+      "properties": {
+        "hyna.supabaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase Project URL for Hyna Studio."
+        },
+        "hyna.supabaseAnonKey": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase Anon public key."
+        },
+        "hyna.heartbeatIntervalSeconds": {
+          "type": "number",
+          "default": 30,
+          "description": "Heartbeat reporting frequency in seconds (30-120)."
+        },
+        "hyna.idleTimeoutMinutes": {
+          "type": "number",
+          "default": 5,
+          "description": "Inactivity duration before state is marked as Idle."
+        },
+        "hyna.trackRelativeFilePath": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to share safe relative file paths (e.g. src/App.tsx) with managers."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.19",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.3"
+  }
+}

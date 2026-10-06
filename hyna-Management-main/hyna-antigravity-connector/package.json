@@ -1,0 +1,24 @@
+{
+  "name": "hyna-antigravity-connector",
+  "version": "1.0.0",
+  "description": "Privacy-first lightweight developer activity tracking agent for Google Antigravity and Hyna Studio",
+  "main": "dist/index.js",
+  "bin": {
+    "hyna-antigravity": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "watch": "tsc -w"
+  },
+  "keywords": ["hyna", "antigravity", "activity-tracker", "developer-tools"],
+  "author": "Hyna Studio",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.7.0"
+  }
+}

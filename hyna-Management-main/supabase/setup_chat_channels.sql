@@ -1,0 +1,95 @@
+-- ============================================================
+-- HYNA MANAGEMENT - GLOBAL CHAT SETUP
+-- Run this script in your Supabase SQL Editor:
+-- Supabase Dashboard -> SQL Editor -> New Query -> Paste & Run
+-- ============================================================
+
+-- 1. Ensure chat_channels and chat_messages tables exist
+CREATE TABLE IF NOT EXISTS public.chat_channels (
+  id TEXT PRIMARY KEY DEFAULT ('ch_' || encode(gen_random_bytes(6), 'hex')),
+  name TEXT NOT NULL,
+  type TEXT DEFAULT 'general',
+  member_ids TEXT[] DEFAULT '{}',
+  last_message TEXT DEFAULT '',
+  last_message_at TIMESTAMPTZ DEFAULT NOW(),
+  unread_count INTEGER DEFAULT 0,
+  icon TEXT DEFAULT 'hash',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.chat_messages (
+  id TEXT PRIMARY KEY DEFAULT ('msg_' || encode(gen_random_bytes(6), 'hex')),
+  channel_id TEXT NOT NULL REFERENCES public.chat_channels(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  type TEXT DEFAULT 'text',
+  attachments TEXT[] DEFAULT '{}',
+  reactions JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Remove unwanted channels (announcements, development, random, general, direct messages)
+DELETE FROM public.chat_channels
+WHERE name IN ('announcements', 'development', 'random', 'general')
+   OR type = 'direct';
+
+-- 3. Seed the single unified Global Chat channel
+INSERT INTO public.chat_channels (id, name, type, icon, member_ids)
+VALUES ('ch_global', 'global-chat', 'general', 'globe', '{}')
+ON CONFLICT (id) DO NOTHING;
+
+-- 4. Enable RLS
+ALTER TABLE IF EXISTS public.chat_channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.chat_messages ENABLE ROW LEVEL SECURITY;
+
+-- 5. Drop old restrictive policies
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "channels_select" ON public.chat_channels;
+  DROP POLICY IF EXISTS "channels_insert" ON public.chat_channels;
+  DROP POLICY IF EXISTS "channels_update" ON public.chat_channels;
+  DROP POLICY IF EXISTS "channels_all" ON public.chat_channels;
+  DROP POLICY IF EXISTS "channels_anon_all" ON public.chat_channels;
+
+  DROP POLICY IF EXISTS "messages_select" ON public.chat_messages;
+  DROP POLICY IF EXISTS "messages_insert" ON public.chat_messages;
+  DROP POLICY IF EXISTS "messages_all" ON public.chat_messages;
+  DROP POLICY IF EXISTS "messages_anon_all" ON public.chat_messages;
+EXCEPTION WHEN others THEN null;
+END $$;
+
+-- 6. Create clean, permissive policies for chat_channels
+CREATE POLICY "channels_all"
+ON public.chat_channels FOR ALL
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "channels_anon_all"
+ON public.chat_channels FOR ALL
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- 7. Create clean, permissive policies for chat_messages
+CREATE POLICY "messages_all"
+ON public.chat_messages FOR ALL
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "messages_anon_all"
+ON public.chat_messages FOR ALL
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- 8. Enable Realtime Replication
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_channels;
+EXCEPTION
+  WHEN others THEN null;
+END $$;
+
+-- Done! Only Global Chat is active and open to everyone.

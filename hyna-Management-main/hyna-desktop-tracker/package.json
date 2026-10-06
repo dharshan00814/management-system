@@ -1,0 +1,22 @@
+{
+  "name": "hyna-desktop-tracker",
+  "version": "1.0.0",
+  "description": "Privacy-conscious developer activity tracker for Hyna Studio Management System",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "tsc && electron .",
+    "dev": "tsc && electron ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "electron": "^34.0.0",
+    "typescript": "^5.7.3"
+  },
+  "private": true
+}

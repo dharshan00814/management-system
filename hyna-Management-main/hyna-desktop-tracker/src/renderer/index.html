@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyna Studio - Desktop Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Hyna Studio</h1>
+          <p class="brand-subtitle">Activity Tracker</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="connectionBadge" class="badge badge-online">
+          <span class="dot"></span> Online
+        </span>
+        <button id="logoutBtn" class="btn-icon" title="Log Out" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Login View -->
+    <div id="loginView" class="view">
+      <div class="login-card">
+        <div class="login-header">
+          <h2>Sign in with Hyna</h2>
+          <p>Connect your existing Hyna Studio account to track verified development time.</p>
+        </div>
+
+        <div class="privacy-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>Privacy Guaranteed: No keystrokes, no code capture</span>
+        </div>
+
+        <div id="loginError" class="alert-error" style="display: none;"></div>
+
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <label for="emailInput">Email Address</label>
+            <input type="email" id="emailInput" placeholder="name@hynastudio.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="passwordInput">Password</label>
+            <input type="password" id="passwordInput" placeholder="••••••••" required />
+          </div>
+
+          <button type="submit" id="submitLoginBtn" class="btn btn-primary btn-block">
+            Sign In & Start Tracking
+          </button>
+        </form>
+
+        <div class="supported-tools">
+          <span>Supported IDEs:</span>
+          <div class="tool-tags">
+            <span class="tool-tag vs-code">VS Code</span>
+            <span class="tool-tag cursor">Cursor</span>
+            <span class="tool-tag antigravity">Antigravity</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Tracker View -->
+    <div id="trackerView" class="view" style="display: none;">
+      <!-- User Profile Card -->
+      <div class="user-card">
+        <div id="userAvatar" class="avatar">U</div>
+        <div class="user-details">
+          <h3 id="userName">Team Member</h3>
+          <p id="userRole">Software Engineer</p>
+        </div>
+        <div class="tracking-indicator" id="trackingIndicator">
+          <span class="pulse-dot"></span> Tracking Active
+        </div>
+      </div>
+
+      <!-- Current Activity Status Card -->
+      <div class="status-card">
+        <div class="status-header">
+          <span class="section-label">Foreground Development Tool</span>
+          <span id="appStateBadge" class="badge badge-active">Active</span>
+        </div>
+
+        <div class="current-app-row">
+          <div id="appDot" class="app-dot"></div>
+          <div>
+            <div id="currentAppName" class="app-name">Waiting for IDE...</div>
+            <div id="currentWorkspace" class="workspace-name">No active project detected</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Counters -->
+      <div class="metrics-grid">
+        <div class="metric-card active-metric">
+          <div class="metric-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div>
+            <div class="metric-label">Active Coding Today</div>
+            <div id="activeTimeToday" class="metric-value">00h 00m 00s</div>
+          </div>
+        </div>
+
+        <div class="metric-card idle-metric">
+          <div class="metric-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+              <line x1="6" y1="1" x2="6" y2="4"></line>
+              <line x1="10" y1="1" x2="10" y2="4"></line>
+              <line x1="14" y1="1" x2="14" y2="4"></line>
+            </svg>
+          </div>
+          <div>
+            <div class="metric-label">Idle Time Today</div>
+            <div id="idleTimeToday" class="metric-value">00h 00m 00s</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings & Controls -->
+      <div class="controls-card">
+        <div class="control-row">
+          <label for="idleThresholdSelect">Idle Threshold</label>
+          <select id="idleThresholdSelect" class="select-input">
+            <option value="5">5 minutes (Default)</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+          </select>
+        </div>
+
+        <div class="control-buttons">
+          <button id="toggleTrackingBtn" class="btn btn-secondary">
+            Pause Tracking
+          </button>
+          <button id="syncNowBtn" class="btn btn-outline">
+            Sync Now
+          </button>
+        </div>
+      </div>
+
+      <!-- Sync Status & Offline Queue -->
+      <div class="sync-footer">
+        <div class="sync-info">
+          <span id="queueStatus">Queue: 0 pending sessions</span>
+          <span class="divider">·</span>
+          <span id="lastSyncStatus">Synced: Just now</span>
+        </div>
+        <div class="footer-links">
+          <a href="#" id="openDashboardLink">Web Dashboard</a>
+          <span class="divider">·</span>
+          <a href="#" id="openPrivacyLink">Privacy Guarantee</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
