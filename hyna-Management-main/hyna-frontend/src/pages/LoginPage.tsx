@@ -470,6 +470,7 @@ export function LoginPage() {
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [loginStep, setLoginStep] = useState(1);
 
   // Burst bubbles on click
   const [bubbles, setBubbles] = useState<BubbleParticle[]>([]);
@@ -576,6 +577,18 @@ export function LoginPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     spawnBubbles();
+    
+    if (!isRegistering && loginStep === 1) {
+      if (!orgName.trim()) {
+        setErrorMessage('Please enter your workspace or organization name.');
+        return;
+      }
+      setErrorMessage('');
+      setActiveOrganization(orgName.trim());
+      setLoginStep(2);
+      return;
+    }
+
     await executeLogin(identifier, password);
   };
 
@@ -663,18 +676,6 @@ export function LoginPage() {
       </div>
 
       <section className="su-card">
-        {/* Top Logo */}
-        <img
-          src={(orgName || activeOrganization) && (orgName || activeOrganization).toLowerCase() !== 'hyna studio' 
-            ? `https://ui-avatars.com/api/?name=${encodeURIComponent(orgName || activeOrganization)}&background=14161c&color=bbf451&bold=true` 
-            : "/logo.png"}
-          alt={orgName || activeOrganization || "Hyna Studio"}
-          className={cn(
-            "su-logo",
-            (orgName || activeOrganization) && (orgName || activeOrganization).toLowerCase() !== 'hyna studio' && "rounded-2xl"
-          )}
-        />
-
         {/* Welcome Pill Badge */}
         <div className="su-badge">
           Welcome to the SaaS platform
@@ -728,76 +729,100 @@ export function LoginPage() {
             </>
           )}
 
-          <div className="su-field">
-            <input
-              type="text"
-              placeholder="Email address"
-              value={identifier}
-              onChange={(e) => {
-                setIdentifier(e.target.value);
-                if (errorMessage) setErrorMessage('');
-              }}
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          <div className="su-field password">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (errorMessage) setErrorMessage('');
-              }}
-              autoComplete="current-password"
-              required
-            />
-            <button
-              type="button"
-              className="su-eye-btn"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? (
-                <EyeOff className="w-[18px] h-[18px]" />
-              ) : (
-                <Eye className="w-[18px] h-[18px]" />
-              )}
-            </button>
-          </div>
-
-          {/* Remember me & Forgot Password */}
-          {!isRegistering && (
-            <div className="su-row">
-              <div
-                className="su-remember"
-                onClick={() => setRememberMe(!rememberMe)}
-                role="checkbox"
-                aria-checked={rememberMe}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    setRememberMe(!rememberMe);
-                  }
+          {(!isRegistering && loginStep === 1) && (
+            <div className="su-field relative">
+              <input
+                type="text"
+                placeholder="Workspace / Organization Name"
+                value={orgName}
+                onChange={(e) => {
+                  setOrgName(e.target.value);
+                  if (errorMessage) setErrorMessage('');
                 }}
-              >
-                <div className={`su-checkbox-box ${rememberMe ? 'checked' : 'unchecked'}`}>
-                  {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
-                </div>
-                <span className="su-remember-text">Remember me</span>
+                required
+                readOnly={isInvite}
+                style={isInvite ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+              />
+              {isInvite && (
+                <div className="text-xs text-indigo-400 mt-1 pl-1">You have been invited to join this organization</div>
+              )}
+            </div>
+          )}
+
+          {(isRegistering || (!isRegistering && loginStep === 2)) && (
+            <>
+              <div className="su-field">
+                <input
+                  type="text"
+                  placeholder="Email address"
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
+                  autoComplete="username"
+                  required
+                />
               </div>
 
-              <button
-                type="button"
-                className="su-forgot-btn"
-                onClick={() => toast.info('Please contact your administrator for password recovery.')}
-              >
-                Forgot password?
-              </button>
-            </div>
+              <div className="su-field password">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="su-eye-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-[18px] h-[18px]" />
+                  ) : (
+                    <Eye className="w-[18px] h-[18px]" />
+                  )}
+                </button>
+              </div>
+
+              {/* Remember me & Forgot Password */}
+              {!isRegistering && (
+                <div className="su-row">
+                  <div
+                    className="su-remember"
+                    onClick={() => setRememberMe(!rememberMe)}
+                    role="checkbox"
+                    aria-checked={rememberMe}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setRememberMe(!rememberMe);
+                      }
+                    }}
+                  >
+                    <div className={`su-checkbox-box ${rememberMe ? 'checked' : 'unchecked'}`}>
+                      {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <span className="su-remember-text">Remember me</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="su-forgot-btn"
+                    onClick={() => toast.info('Please contact your administrator for password recovery.')}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <div style={{ width: '100%', marginTop: isRegistering ? '12px' : '0' }}></div>
@@ -817,18 +842,37 @@ export function LoginPage() {
               </>
             ) : (
               <>
-                <span>{isRegistering ? 'Create Workspace' : 'Sign in'}</span>
+                <span>
+                  {isRegistering 
+                    ? 'Create Workspace' 
+                    : (!isRegistering && loginStep === 1) 
+                      ? 'Continue' 
+                      : 'Sign in'}
+                </span>
                 <ArrowRight className="w-4 h-4 ml-0.5 stroke-[2.4]" />
               </>
             )}
           </button>
           
-          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <div style={{ marginTop: '24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+             {!isRegistering && loginStep === 2 && (
+               <button
+                 type="button"
+                 className="su-forgot-btn"
+                 onClick={() => {
+                   setLoginStep(1);
+                   setErrorMessage('');
+                 }}
+               >
+                 &larr; Back to Workspace
+               </button>
+             )}
              <button
                 type="button"
                 className="su-forgot-btn"
                 onClick={() => {
                   setIsRegistering(!isRegistering);
+                  setLoginStep(1);
                   setErrorMessage('');
                 }}
               >
