@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores';
+import { cn } from '@/lib/utils';
 
 interface BubbleParticle {
   id: number;
@@ -459,7 +460,7 @@ const css = `
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, signUp, setActiveOrganization } = useAuthStore();
+  const { login, signUp, setActiveOrganization, activeOrganization } = useAuthStore();
   const submitBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -664,9 +665,14 @@ export function LoginPage() {
       <section className="su-card">
         {/* Top Logo */}
         <img
-          src="/logo.png"
-          alt="Hyna Studio"
-          className="su-logo"
+          src={(orgName || activeOrganization) && (orgName || activeOrganization).toLowerCase() !== 'hyna studio' 
+            ? `https://ui-avatars.com/api/?name=${encodeURIComponent(orgName || activeOrganization)}&background=14161c&color=bbf451&bold=true` 
+            : "/logo.png"}
+          alt={orgName || activeOrganization || "Hyna Studio"}
+          className={cn(
+            "su-logo",
+            (orgName || activeOrganization) && (orgName || activeOrganization).toLowerCase() !== 'hyna studio' && "rounded-2xl"
+          )}
         />
 
         {/* Welcome Pill Badge */}
