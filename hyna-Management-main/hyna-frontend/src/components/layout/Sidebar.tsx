@@ -113,16 +113,15 @@ export function Sidebar() {
           isCollapsed ? 'justify-center px-2' : 'px-5',
         )}>
           <div className="flex items-center gap-2.5 min-w-0">
-            <img 
-              src={activeOrganization && activeOrganization.toLowerCase() !== 'hyna studio' 
-                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(activeOrganization)}&background=14161c&color=bbf451&bold=true` 
-                : "/logo.png"} 
-              alt={`${activeOrganization} Logo`} 
-              className={cn(
-                "w-8 h-8 object-contain shrink-0",
-                activeOrganization && activeOrganization.toLowerCase() !== 'hyna studio' && "rounded-lg"
-              )} 
-            />
+            {isCollapsed ? (
+              <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center font-bold text-sm shrink-0 uppercase">
+                {activeOrganization.charAt(0)}
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center font-bold text-sm shrink-0 uppercase">
+                {activeOrganization.charAt(0)}
+              </div>
+            )}
             {!isCollapsed && (
               <div className="min-w-0">
                 <h1 className="text-sm font-semibold truncate">{activeOrganization}</h1>

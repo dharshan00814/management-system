@@ -501,7 +501,7 @@ export function LoginPage() {
       const duration = 1.3 + Math.random() * 0.8; // 1.3s to 2.1s
 
       newParticles.push({
-        id: Date.now() + Math.random(),
+        id: Date.now() + i,
         x: x + spreadX,
         y: y + (Math.random() - 0.5) * 18,
         size,

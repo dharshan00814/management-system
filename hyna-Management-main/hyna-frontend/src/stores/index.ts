@@ -294,7 +294,7 @@ export const useAuthStore = create<AuthState>()(
             return { success: true, session: true, requiresEmailConfirmation: false, role };
           } else {
             // User registered, but email confirmation is pending in Supabase
-            const role = userRole === 'admin' ? 'admin' : userRole === 'manager' ? 'manager' : 'member';
+            const role = userRole === 'admin' ? 'admin' : (userRole as string) === 'manager' ? 'manager' : 'member';
             set({ isLoading: false });
             return { success: true, session: false, requiresEmailConfirmation: true, role };
           }
