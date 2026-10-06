@@ -407,10 +407,20 @@ function mapAnnouncement(row: any): Announcement {
 // ============================================================
 export async function getUsers(): Promise<User[]> {
   try {
+    const state = useAuthStore.getState();
+    const orgId = state.currentUser?.organizationId || state.activeOrganization;
     let profilesQuery = supabase.from('profiles').select('*').order('name', { ascending: true });
+    
+    if (orgId) {
+      profilesQuery = profilesQuery.eq('organization_id', orgId);
+    } else {
+      profilesQuery = profilesQuery.is('organization_id', null);
+    }
+
     const { data, error } = await profilesQuery;
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.error('Error fetching users from Supabase:', error);
       return usersCache;
     }
     const mapped = (data || []).map(mapUser);
@@ -642,6 +652,10 @@ export async function addMember(input: AddMemberInput): Promise<User> {
     phone,
     status: 'active',
   };
+  
+  if (currentOrgId) {
+    profilePayload.organization_id = currentOrgId;
+  }
   if (employeeId) {
     profilePayload.employee_id = employeeId;
   }
@@ -706,7 +720,21 @@ export async function getProjects(filter?: { managerId?: string; memberId?: stri
       console.error('Error fetching projects from Supabase:', error);
       return projectsCache;
     }
-    const projects = (data || []).map(mapProject);
+    
+    // Organization Isolation Filter
+    const orgUsers = await getUsers();
+    const orgUserIds = new Set(orgUsers.map(u => u.id));
+    
+    let projects = (data || []).map(mapProject).filter(p => {
+      // If we have an active org and users, only keep projects linked to these users
+      if (orgUserIds.size > 0) {
+        if (p.managerId && orgUserIds.has(p.managerId)) return true;
+        if (p.memberIds?.some(id => orgUserIds.has(id))) return true;
+        return false;
+      }
+      return true; // fallback if no users
+    });
+
     const localOnly = projectsCache.filter(local => local.id.startsWith('proj_') && !projects.some(p => p.id === local.id));
     projectsCache = [...localOnly, ...projects];
     return projectsCache;
@@ -912,7 +940,17 @@ export async function getModules(projectId?: string): Promise<Module[]> {
     if (idx !== -1) modulesCache[idx] = mod;
     else modulesCache.push(mod);
   });
-  return modules;
+  
+  // Organization Isolation Filter
+  const orgProjects = await getProjects();
+  const orgProjectIds = new Set(orgProjects.map(p => p.id));
+  
+  return modules.filter(m => {
+    if (orgProjectIds.size > 0) {
+      return orgProjectIds.has(m.projectId);
+    }
+    return true;
+  });
 }
 
 export async function createModule(module: Partial<Module>): Promise<Module> {
@@ -1055,6 +1093,21 @@ export async function getTasks(filter?: { assigneeId?: string; projectId?: strin
       return tasksCache;
     }
     let tasks = (data || []).map(mapTask);
+
+    // Organization Isolation Filter
+    const orgUsers = await getUsers();
+    const orgUserIds = new Set(orgUsers.map(u => u.id));
+    const orgProjects = await getProjects();
+    const orgProjectIds = new Set(orgProjects.map(p => p.id));
+    
+    tasks = tasks.filter(t => {
+      if (orgUserIds.size > 0 || orgProjectIds.size > 0) {
+        if (t.assigneeId && orgUserIds.has(t.assigneeId)) return true;
+        if (t.projectId && orgProjectIds.has(t.projectId)) return true;
+        return false;
+      }
+      return true;
+    });
 
     if (filter?.managerId) {
       const mgrProjects = await getProjects({ managerId: filter.managerId });
@@ -1332,7 +1385,19 @@ export async function getMeetings(userId?: string): Promise<Meeting[]> {
   // Ensure removed default meetings, blacklisted meetings, and deleted meetings are never in cache
   meetingsCache = meetingsCache.filter(m => !isPurgedMeeting(m));
 
-  let result = [...meetingsCache];
+  // Organization Isolation Filter
+  const orgUsers = await getUsers();
+  const orgUserIds = new Set(orgUsers.map(u => u.id));
+  
+  let result = [...meetingsCache].filter(m => {
+    if (orgUserIds.size > 0) {
+      if (m.hostId && orgUserIds.has(m.hostId)) return true;
+      if (m.participantIds?.some(id => orgUserIds.has(id))) return true;
+      if (m.createdBy && orgUserIds.has(m.createdBy)) return true;
+      return false;
+    }
+    return true;
+  });
   if (userId) {
     const uIdUpper = userId.toUpperCase();
     result = result.filter(m => 
@@ -1614,7 +1679,16 @@ export async function getAttendance(userId?: string, date?: string): Promise<Att
       console.error('Error fetching attendance from Supabase:', error);
       return [];
     }
-    return (data || []).map(mapAttendance);
+    
+    const orgUsers = await getUsers();
+    const orgUserIds = new Set(orgUsers.map(u => u.id));
+    
+    return (data || []).map(mapAttendance).filter(a => {
+      if (orgUserIds.size > 0 && a.userId) {
+        return orgUserIds.has(a.userId);
+      }
+      return true;
+    });
   } catch (err) {
     console.error('Error in getAttendance:', err);
     return [];
@@ -1907,7 +1981,16 @@ export async function getDailyReports(): Promise<DailyReport[]> {
     console.error('Error fetching daily reports:', error);
     return [];
   }
-  return (data || []).map(mapDailyReport);
+  
+  const orgUsers = await getUsers();
+  const orgUserIds = new Set(orgUsers.map(u => u.id));
+  
+  return (data || []).map(mapDailyReport).filter(r => {
+    if (orgUserIds.size > 0 && r.userId) {
+      return orgUserIds.has(r.userId);
+    }
+    return true;
+  });
 }
 
 export async function submitDailyReport(report: Partial<DailyReport>): Promise<DailyReport> {
@@ -2362,7 +2445,16 @@ export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     .order('created_at', { ascending: false });
 
   if (error) return [];
-  return (data || []).map(mapLeaveRequest);
+  
+  const orgUsers = await getUsers();
+  const orgUserIds = new Set(orgUsers.map(u => u.id));
+  
+  return (data || []).map(mapLeaveRequest).filter(lr => {
+    if (orgUserIds.size > 0 && lr.userId) {
+      return orgUserIds.has(lr.userId);
+    }
+    return true;
+  });
 }
 
 export async function createLeaveRequest(request: Partial<LeaveRequest>): Promise<LeaveRequest> {
@@ -2444,7 +2536,16 @@ export async function getAnnouncements(): Promise<Announcement[]> {
     .order('created_at', { ascending: false });
 
   if (error) return [];
-  return (data || []).map(mapAnnouncement);
+  
+  const orgUsers = await getUsers();
+  const orgUserIds = new Set(orgUsers.map(u => u.id));
+  
+  return (data || []).map(mapAnnouncement).filter(a => {
+    if (orgUserIds.size > 0 && a.createdBy) {
+      return orgUserIds.has(a.createdBy);
+    }
+    return true;
+  });
 }
 
 export async function createAnnouncement(announcement: Partial<Announcement>): Promise<Announcement> {

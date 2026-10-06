@@ -163,6 +163,19 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const role = computeEffectiveRole(user);
+          
+          // Self-heal organization ID for legacy accounts or accounts created without it
+          const activeOrg = get().activeOrganization;
+          if (!user.organizationId && activeOrg) {
+             const { error: updateErr } = await supabase
+               .from('profiles')
+               .update({ organization_id: activeOrg })
+               .eq('id', user.id);
+             if (!updateErr) {
+               user.organizationId = activeOrg;
+             }
+          }
+
           set({
             currentUser: user,
             currentRole: user.role,
@@ -222,16 +235,8 @@ export const useAuthStore = create<AuthState>()(
             let finalOrgId: string | undefined = undefined;
 
             if (orgName) {
-              const { data: org, error: orgError } = await supabase
-                .from('organizations')
-                .insert({
-                  name: orgName.trim(),
-                  slug: orgName.trim().toLowerCase().replace(/\s+/g, '-'),
-                  owner_id: userId,
-                })
-                .select()
-                .maybeSingle();
-              if (org) finalOrgId = org.id;
+              // Directly use the provided organization name as the organization_id identifier
+              finalOrgId = orgName.trim();
             }
 
             // Attempt to ensure profile exists in database
