@@ -53,7 +53,7 @@ const PRESET_AVATARS = [
 ];
 
 export function SettingsPage() {
-  const { currentUser, currentRole, setUser, activeOrganization } = useAuthStore();
+  const { currentUser, currentRole, setUser, activeOrganization, organizationLogo, setOrganizationLogo } = useAuthStore();
   const { mode, setMode } = useThemeStore();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'notifications' | 'security'>('profile');
@@ -72,6 +72,8 @@ export function SettingsPage() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [customAvatarUrl, setCustomAvatarUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const orgLogoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingOrgLogo, setIsUploadingOrgLogo] = useState(false);
 
   // Native Web Push Hook
   const {
@@ -170,6 +172,37 @@ export function SettingsPage() {
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleOrgLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeOrganization) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (PNG, JPG, WebP, etc.).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image file must be under 5MB.');
+      return;
+    }
+
+    setIsUploadingOrgLogo(true);
+    const toastId = toast.loading('Uploading company logo...');
+
+    try {
+      // Use the existing uploadAvatar function, but trick it with activeOrganization as userId
+      // This will store it under avatars/techpro_123456.ext which is fine for now
+      const publicUrl = await uploadAvatar(activeOrganization.replace(/[^a-zA-Z0-9]/g, '_'), file);
+      setOrganizationLogo(publicUrl);
+      toast.success('Company logo updated successfully!', { id: toastId });
+    } catch (err: any) {
+      console.error('Org logo upload error:', err);
+      toast.error(err?.message || 'Failed to upload company logo', { id: toastId });
+    } finally {
+      setIsUploadingOrgLogo(false);
+      if (orgLogoInputRef.current) orgLogoInputRef.current.value = '';
     }
   };
 
@@ -592,13 +625,75 @@ export function SettingsPage() {
 
       {/* Appearance Tab */}
       {activeTab === 'appearance' && (
-        <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] rounded-xl space-y-6">
-          <div>
-            <h3 className="font-semibold text-base mb-1">Theme Preferences</h3>
-            <p className="text-xs text-[var(--color-muted-foreground)]">
-              Choose your preferred interface theme for {activeOrganization}.
-            </p>
-          </div>
+        <div className="space-y-6">
+          {currentRole === 'admin' && (
+            <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] rounded-xl space-y-4">
+              <div>
+                <h3 className="font-semibold text-base mb-1">Company Logo</h3>
+                <p className="text-xs text-[var(--color-muted-foreground)]">
+                  Upload a company logo for {activeOrganization} to display in the sidebar.
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)] flex items-center justify-center overflow-hidden shrink-0">
+                  {organizationLogo ? (
+                    <img src={organizationLogo} alt="Company Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <Building className="w-8 h-8 text-[var(--color-muted-foreground)]" />
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    ref={orgLogoInputRef}
+                    onChange={handleOrgLogoFileSelect}
+                    accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                    className="hidden"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => orgLogoInputRef.current?.click()}
+                      disabled={isUploadingOrgLogo}
+                      className="cursor-pointer text-xs"
+                    >
+                      {isUploadingOrgLogo ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      )}
+                      Upload Logo
+                    </Button>
+                    {organizationLogo && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOrganizationLogo('')}
+                        disabled={isUploadingOrgLogo}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10 cursor-pointer text-xs"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[var(--color-muted-foreground)] mt-2">
+                    Square image recommended. Max size 5MB. (PNG, JPG, WebP)
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] rounded-xl space-y-6">
+            <div>
+              <h3 className="font-semibold text-base mb-1">Theme Preferences</h3>
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                Choose your preferred interface theme for {activeOrganization}.
+              </p>
+            </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
@@ -632,6 +727,7 @@ export function SettingsPage() {
               );
             })}
           </div>
+        </div>
         </div>
       )}
 

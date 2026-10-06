@@ -87,7 +87,7 @@ const getBottomNavItems = (isExec: boolean): NavItem[] => {
 
 export function Sidebar() {
   const { isCollapsed, isMobileOpen, toggle, setMobileOpen } = useSidebarStore();
-  const { currentUser, effectiveRole, activeOrganization } = useAuthStore();
+  const { currentUser, effectiveRole, activeOrganization, organizationLogo } = useAuthStore();
   const location = useLocation();
 
   const isExec = isExecutiveLeadership(currentUser);
@@ -113,10 +113,8 @@ export function Sidebar() {
           isCollapsed ? 'justify-center px-2' : 'px-5',
         )}>
           <div className="flex items-center gap-2.5 min-w-0">
-            {isCollapsed ? (
-              <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center font-bold text-sm shrink-0 uppercase">
-                {activeOrganization.charAt(0)}
-              </div>
+            {organizationLogo ? (
+              <img src={organizationLogo} alt="Company Logo" className="w-8 h-8 rounded-lg object-contain shrink-0" />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center font-bold text-sm shrink-0 uppercase">
                 {activeOrganization.charAt(0)}

@@ -73,7 +73,9 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   activeOrganization: string;
+  organizationLogo: string;
   setActiveOrganization: (name: string) => void;
+  setOrganizationLogo: (url: string) => void;
   login: (identifier: string, password: string) => Promise<{ success: boolean; role?: 'admin' | 'manager' | 'member'; error?: string }>;
   signUp: (data: { email: string; password: string; name: string; department?: string; designation?: string; employeeId?: string; orgName?: string; isInvite?: boolean }) => Promise<{ success: boolean; session?: boolean; requiresEmailConfirmation?: boolean; role?: 'admin' | 'manager' | 'member'; error?: string }>;
   logout: () => Promise<void>;
@@ -90,7 +92,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       activeOrganization: 'Hyna Studio',
+      organizationLogo: '',
       setActiveOrganization: (name: string) => set({ activeOrganization: name }),
+      setOrganizationLogo: (url: string) => set({ organizationLogo: url }),
 
       login: async (identifier: string, password: string) => {
         try {
@@ -406,6 +410,7 @@ export const useAuthStore = create<AuthState>()(
         effectiveRole: state.effectiveRole,
         isAuthenticated: state.isAuthenticated,
         activeOrganization: state.activeOrganization,
+        organizationLogo: state.organizationLogo,
       }),
     }
   )
